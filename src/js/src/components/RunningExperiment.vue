@@ -284,6 +284,38 @@
         </footer>
       </div>
     </b-modal>
+    <b-modal :active.sync="appsActive" :on-cancel="resetAppsModal" has-modal-card>
+      <div class="modal-card" style="width:25em">
+        <header class="modal-card-head">
+          <p class="modal-card-title">phēnix Apps</p>
+        </header>
+        <section class="modal-card-body">
+          <p v-for="( a, index ) in experiment.apps" :key="index">
+            <b-tooltip label="do something to this app" type="is-light is-right">
+              <b-checkbox size="is-small" type="is-light" />
+            </b-tooltip>
+              {{ a }}
+            </p>
+          </p>          
+        </section>
+        <footer class="modal-card-foot  buttons is-right">
+          <div v-if="adminUser()">
+            <!-- <template v-if="!expModal.vm.running"> -->
+              <b-tooltip label="start selected apps" type="is-light is-left">
+                <b-button class="button is-success" icon-left="play">
+                </b-button>
+              </b-tooltip>
+            <!-- </template> -->
+            <!-- <template v-else>
+              <b-tooltip label="pause" type="is-light">
+                <b-button class="button is-warning" icon-left="pause" @click="pauseVm( expModal.vm.name )">
+                </b-button>
+              </b-tooltip>
+            </template> -->
+          </div>
+        </footer>
+      </div>
+    </b-modal>
     <hr>
     <div class="level is-vcentered">
       <div  class="level-item">
@@ -292,10 +324,10 @@
       <div  class="level-item" v-if="experiment.scenario">
         <span style="font-weight: bold;">Scenario: {{ experiment.scenario }}</span>&nbsp;
       </div>
-      <div  class="level-item" v-if="experiment.scenario">
+      <div  class="level-item" v-if="experiment.scenario" @click="getApps(experiment.apps)">
         <span style="font-weight: bold;">Apps:</span>&nbsp;
         <b-taglist>
-          <b-tag  v-for="( a, index ) in experiment.apps" :key="index" type="is-light">
+          <b-tag v-for="( a, index ) in experiment.apps" :key="index" type="is-light">
             {{ a }}  
           </b-tag>
         </b-taglist>
@@ -1212,6 +1244,10 @@
             break;
           }
         }
+      },
+
+      getApps (apps) {
+        this.appsActive = true;
       },
     
       async updateExperiment  () {
@@ -2383,6 +2419,15 @@
           vm: []
         }
       },
+
+      startApp ( app ) {
+        console.log('do something to the app: ' + app);
+        this.resetAppsModal();
+      },
+
+      resetAppsModal () {
+        this.appsActive = false;
+      },
       
       validate  (modalVMQueue) {  
               
@@ -2600,6 +2645,7 @@
            nameErrType: null, nameErrMsg: null
           */
         },
+        appsActive: false,
         experiment: [],
         files: [],
         disks: [],
