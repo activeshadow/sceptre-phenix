@@ -816,6 +816,18 @@
     
       handle  ( msg ) {
         switch ( msg.resource.type ) {
+          case  'triggering': {
+            console.log('triggering');
+          }
+
+          case  'errorTriggering': {
+            console.log('errorTriggering');
+          }
+
+          case  'trigger': {
+            console.log('trigger');
+          }
+
           case  'experiment/vms': {
             if ( msg.resource.action != 'list' ) {
               return;
