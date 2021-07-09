@@ -284,34 +284,21 @@
         </footer>
       </div>
     </b-modal>
-    <b-modal :active.sync="appsActive" :on-cancel="resetAppsModal" has-modal-card>
+    <b-modal :active.sync="appsModal.active" :on-cancel="resetAppsModal" has-modal-card>
       <div class="modal-card" style="width:25em">
         <header class="modal-card-head">
           <p class="modal-card-title">phēnix Apps</p>
         </header>
         <section class="modal-card-body">
-          <p v-for="( a, index ) in experiment.apps" :key="index">
-            <b-tooltip label="do something to this app" type="is-light is-right">
-              <b-checkbox size="is-small" type="is-light" />
-            </b-tooltip>
-              {{ a }}
-            </p>
-          </p>          
+          <b-checkbox v-for="( a, index ) in experiment.apps" :key="index" :native-value="a" v-model="appsModal.apps" type="is-light" style="color:#202020">
+            {{ a }}
+          </b-checkbox>
         </section>
         <footer class="modal-card-foot  buttons is-right">
           <div v-if="adminUser()">
-            <!-- <template v-if="!expModal.vm.running"> -->
-              <b-tooltip label="start selected apps" type="is-light is-left">
-                <b-button class="button is-success" icon-left="play">
-                </b-button>
-              </b-tooltip>
-            <!-- </template> -->
-            <!-- <template v-else>
-              <b-tooltip label="pause" type="is-light">
-                <b-button class="button is-warning" icon-left="pause" @click="pauseVm( expModal.vm.name )">
-                </b-button>
-              </b-tooltip>
-            </template> -->
+            <b-tooltip label="start selected apps" type="is-light is-left">
+              <b-button class="button is-success" @click="startApps(appsModal.apps)">Trigger Apps</b-button>
+            </b-tooltip>
           </div>
         </footer>
       </div>
@@ -324,7 +311,7 @@
       <div  class="level-item" v-if="experiment.scenario">
         <span style="font-weight: bold;">Scenario: {{ experiment.scenario }}</span>&nbsp;
       </div>
-      <div  class="level-item" v-if="experiment.scenario" @click="getApps(experiment.apps)">
+      <div  class="level-item" v-if="experiment.scenario" @click="getApps()">
         <span style="font-weight: bold;">Apps:</span>&nbsp;
         <b-taglist>
           <b-tag v-for="( a, index ) in experiment.apps" :key="index" type="is-light">
@@ -815,6 +802,7 @@
       },
     
       handle  ( msg ) {
+        console.log(msg.resource.type);
         switch ( msg.resource.type ) {
           case  'triggering': {
             console.log('triggering');
@@ -1258,10 +1246,6 @@
         }
       },
 
-      getApps (apps) {
-        this.appsActive = true;
-      },
-    
       async updateExperiment  () {
         try {
           let resp  = await this.$http.get('experiments/' + this.$route.params.id);
@@ -2432,13 +2416,32 @@
         }
       },
 
-      startApp ( app ) {
-        console.log('do something to the app: ' + app);
+      getApps () {
+        this.appsModal.active = true;
+      },
+
+      startApps ( apps ) {
+        apps = apps.join();
+        console.log(apps);
+
+        if ( apps ) {
+          this.$http.post( 'experiments/' + this.$route.params.id + '/trigger' + '?apps=' + apps )
+          .then( response => {
+            console.log('response: ' + response.status);
+          });
+        } else {
+          this.$http.post( 'experiments/' + this.$route.params.id + '/trigger' )
+          .then( response => {
+            console.log('response: ' + response.status);
+          });
+        }
+
         this.resetAppsModal();
       },
 
       resetAppsModal () {
-        this.appsActive = false;
+        this.appsModal.apps = [];
+        this.appsModal.active = false;
       },
       
       validate  (modalVMQueue) {  
@@ -2657,7 +2660,10 @@
            nameErrType: null, nameErrMsg: null
           */
         },
-        appsActive: false,
+        appsModal: {
+          active: false,
+          apps: []
+        },
         experiment: [],
         files: [],
         disks: [],
