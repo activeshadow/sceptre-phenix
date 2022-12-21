@@ -56,10 +56,11 @@ jobs:
       - name: Get short SHA
         run: |
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-          echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
           if [[ "${{ github.event_name }}" = "pull_request" ]]; then
+            echo "branch=$(echo ${{ github.head_ref }})" >> $GITHUB_ENV
             echo "tag=PR-$(echo ${{ github.event.pull_request.number }})" >> $GITHUB_ENV
           else
+            echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
             echo "tag=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
           fi
       - name: Log in to GitHub Docker Registry
