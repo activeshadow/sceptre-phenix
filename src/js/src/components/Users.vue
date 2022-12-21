@@ -58,7 +58,7 @@
             <b-input type="text" v-model="user.last_name"></b-input>
           </b-field>
           <b-field label="Password">
-            <b-input type="password" minlength="8" maxlength="32" v-model="user.password"></b-input>
+            <b-input type="password" v-model="user.password"></b-input>
           </b-field>
           <b-field label="New Password">
             <b-input type="password" minlength="8" maxlength="32" v-model="user.new_password"></b-input>
