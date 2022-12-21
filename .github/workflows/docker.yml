@@ -45,9 +45,8 @@ jobs:
             ghcr.io/${{ github.repository }}/phenix:${{ env.branch }}
   push-jit-to-ghcr:
     name: Push phenix JIT Docker image to GitHub Packages
-    needs: push-to-ghcr
     runs-on: ubuntu-latest
-    if: ${{ github.ref_name == 'main' || contains(github.event.head_commit.message, 'BUILD DOCKER IMAGES') }}
+    needs: push-to-ghcr
     permissions:
       packages: write
       contents: read
