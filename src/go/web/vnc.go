@@ -5,10 +5,12 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"time"
 
 	"phenix/api/vm"
 	"phenix/util/mm"
 	"phenix/util/plog"
+	"phenix/web/middleware"
 	"phenix/web/rbac"
 	"phenix/web/util"
 
@@ -35,11 +37,28 @@ func GetVNC(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	begin := time.Now()
+
 	vm, err := vm.Get(exp, name)
 	if err != nil {
 		http.Error(w, "VM not found", http.StatusNotFound)
 		return
 	}
+
+	trace, ok := ctx.Value(middleware.RequestIDKey).(string)
+	if ok {
+
+		plog.Debug("HTTP Trace", "id", trace, "span", "vms/vnc get", "duration", end.Sub(begin))
+	}
+
+	/*
+		if span := middleware.NewSpan(ctx); span != nil {
+			end := time.Now()
+
+			span.Name = "vms/vnc get"
+			span.Duration = end.Sub(begin)
+		}
+	*/
 
 	// The `token` variable will be an empty string if authentication is disabled,
 	// which is okay and will not cause any issues here.

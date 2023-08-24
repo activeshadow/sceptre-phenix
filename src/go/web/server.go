@@ -279,6 +279,13 @@ func Start(opts ...ServerOption) error {
 
 	api.Use(middleware.Auth(o.jwtKey, o.proxyAuthHeader))
 
+	// Do this after adding auth middleware so the trace middleware handler will
+	// have access to username making request for logging purposes.
+	if o.traceMiddleware {
+		plog.Info("HTTP API request tracing is enabled")
+		api.Use(middleware.Trace)
+	}
+
 	plog.Info("starting websockets broker")
 
 	go broker.Start()

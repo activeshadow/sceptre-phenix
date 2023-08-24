@@ -22,8 +22,9 @@ type serverOptions struct {
 	tlsKeyPath string
 	tlsCrtPath string
 
-	logMiddleware string
-	minimegaLogs  string
+	logMiddleware   string
+	traceMiddleware bool
+	minimegaLogs    string
 
 	unbundled       bool
 	basePath        string
@@ -118,6 +119,12 @@ func ServeWithTLS(k, c string) ServerOption {
 func ServeWithMiddlewareLogging(l string) ServerOption {
 	return func(o *serverOptions) {
 		o.logMiddleware = l
+	}
+}
+
+func ServeWithMiddlewareTracing() ServerOption {
+	return func(o *serverOptions) {
+		o.traceMiddleware = true
 	}
 }
 
