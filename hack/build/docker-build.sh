@@ -74,7 +74,7 @@ RUN ["/bin/bash", "-c", "if (( $USER_UID != 0 )); then \
 
 RUN apt update && apt install -y curl gnupg2 make protobuf-compiler wget xz-utils
 
-ENV GOLANG_VERSION 1.18.5
+ENV GOLANG_VERSION 1.20.5
 
 RUN wget -O go.tgz https://golang.org/dl/go\${GOLANG_VERSION}.linux-amd64.tar.gz \
   && tar -C /usr/local -xzf go.tgz && rm go.tgz
@@ -85,7 +85,7 @@ ENV PATH \$GOPATH/bin:/usr/local/go/bin:\$PATH
 RUN mkdir -p \$GOPATH/src \$GOPATH/bin \
   && chmod -R 777 \$GOPATH
 
-ENV NODE_VERSION 12.18.3
+ENV NODE_VERSION 14.21.3
 
 RUN wget -O node.txz https://nodejs.org/dist/v\${NODE_VERSION}/node-v\${NODE_VERSION}-linux-x64.tar.xz \
   && tar -xJf node.txz -C /usr/local --strip-components=1 --no-same-owner && rm node.txz \
