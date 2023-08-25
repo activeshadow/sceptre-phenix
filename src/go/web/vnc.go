@@ -45,20 +45,12 @@ func GetVNC(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	trace, ok := ctx.Value(middleware.RequestIDKey).(string)
-	if ok {
+	if span := middleware.NewSpan(ctx); span != nil {
+		end := time.Now()
 
-		plog.Debug("HTTP Trace", "id", trace, "span", "vms/vnc get", "duration", end.Sub(begin))
+		span.Name = "get vm"
+		span.Duration = end.Sub(begin)
 	}
-
-	/*
-		if span := middleware.NewSpan(ctx); span != nil {
-			end := time.Now()
-
-			span.Name = "vms/vnc get"
-			span.Duration = end.Sub(begin)
-		}
-	*/
 
 	// The `token` variable will be an empty string if authentication is disabled,
 	// which is okay and will not cause any issues here.

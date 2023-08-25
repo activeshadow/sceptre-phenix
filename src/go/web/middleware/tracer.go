@@ -10,15 +10,14 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-var (
-	RequestIDKey struct{}
-	SpansKey     struct{}
-)
+type requestIDKey struct{}
 
 type Span struct {
 	Name     string
 	Duration time.Duration
 }
+
+var spans = make(map[string][]*Span)
 
 func Trace(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -31,10 +30,7 @@ func Trace(next http.Handler) http.Handler {
 			id = uuid.Must(uuid.NewV4()).String()
 		}
 
-		spans := make([]*Span, 0)
-
-		ctx = context.WithValue(ctx, RequestIDKey, id)
-		ctx = context.WithValue(ctx, SpansKey, spans)
+		ctx = context.WithValue(ctx, requestIDKey{}, id)
 
 		w.Header().Set("X-Request-Id", id)
 
@@ -49,20 +45,23 @@ func Trace(next http.Handler) http.Handler {
 
 		plog.Debug("HTTP Trace", "id", id, "user", user, "method", r.Method, "path", r.URL.Path, "duration", end.Sub(begin))
 
-		for _, span := range spans {
+		for _, span := range spans[id] {
 			plog.Debug("HTTP Trace", "id", id, "span", span.Name, "duration", span.Duration)
 		}
+
+		delete(spans, id)
 	})
 }
 
 func NewSpan(ctx context.Context) *Span {
-	spans, ok := ctx.Value(SpansKey).([]*Span)
+	trace, ok := ctx.Value(requestIDKey{}).(string)
 	if !ok {
 		return nil
 	}
 
 	span := new(Span)
-	_ = append(spans, span)
+
+	spans[trace] = append(spans[trace], span)
 
 	return span
 }
