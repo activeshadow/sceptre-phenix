@@ -321,13 +321,22 @@ vpn {
     {{ end }}
 }
 
-{{ if $ssh }}
 service {
+    snmp {
+        community public {
+            authorization ro
+            network 10.0.0.0/8
+            network 172.16.0.0/20
+            network 192.168.0.0/24
+        }
+    }
+
+{{ if $ssh }}
     ssh {
         listen-address {{ $ssh }}
     }
-}
 {{ end }}
+}
 
 system {
     host-name {{ $node.RouterName }}
