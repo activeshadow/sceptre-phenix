@@ -78,16 +78,18 @@ func List(expName string) ([]mm.VM, error) {
 		}
 
 		vm := mm.VM{
-			ID:         idx,
-			Name:       node.General().Hostname(),
-			Experiment: exp.Spec.ExperimentName(),
-			CPUs:       node.Hardware().VCPU(),
-			RAM:        node.Hardware().Memory(),
-			Disk:       disk,
-			Interfaces: make(map[string]string),
-			DoNotBoot:  dnb,
-			Type:       node.Type(),
-			OSType:     node.Hardware().OSType(),
+			ID:          idx,
+			Name:        node.General().Hostname(),
+			Experiment:  exp.Spec.ExperimentName(),
+			CPUs:        node.Hardware().VCPU(),
+			RAM:         node.Hardware().Memory(),
+			Disk:        disk,
+			Interfaces:  make(map[string]string),
+			DoNotBoot:   dnb,
+			Type:        node.Type(),
+			OSType:      node.Hardware().OSType(),
+			Labels:      node.Labels(),
+			Annotations: node.Annotations(),
 		}
 
 		for _, iface := range node.Network().Interfaces() {

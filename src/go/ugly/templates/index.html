@@ -1,0 +1,114 @@
+{{define "content"}}
+<div class="columns">
+  <div class="column is-one-fifth">
+    <nav class="panel is-warning">
+      <p class="panel-heading">Experiments</p>
+      <div class="panel-block">
+        <div class="field has-addons">
+          <div class="control">
+            <input class="input" type="text" name="filter" placeholder="Filter Experiments" />
+          </div>
+          <div class="control">
+            <button class="button is-warning">Filter</button>
+          </div>
+        </div>
+      </div>
+      {{range .Experiments}}
+      <a class="panel-block" href="{{$.BasePath}}/?experiment={{.}}">
+        {{.}}
+      </a>
+      {{end}}
+    </nav>
+  </div>
+  <div class="column">
+    {{if .Experiment}}
+    <div class="card">
+      <header class="card-header">
+        <p class="card-header-title is-centered title is-2 has-text-warning">{{.Experiment}}</p>
+      </header>
+      <div class="card-content">
+        <div class="columns">
+          <div class="column is-one-fifth">
+            <p class="title is-6">Topology</p>
+            <p class="subtitle is-6">{{or .Topology "n/a"}}</p>
+          </div>
+          <div class="column is-one-fifth">
+            <p class="title is-6">Scenario</p>
+            <p class="subtitle is-6">{{or .Scenario "n/a"}}</p>
+          </div>
+          <div class="column is-one-fifth">
+            <p class="title is-6">Running</p>
+            <p class="subtitle is-6">yes</p>
+          </div>
+          <div class="column">
+            <form method="GET">
+              <input type="hidden" name="experiment" value="{{.Experiment}}">
+              <div class="field has-addons is-pulled-right">
+                <div class="control">
+                  <input class="input" type="text" name="vm-filter" value="{{.VMFilter}}" placeholder="Filter VMs" />
+                </div>
+                <div class="control">
+                  <button class="button is-warning">Filter</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <form method="POST" action="{{.BasePath}}/experiments/{{.Experiment}}">
+          <div class="columns">
+            <div class="column">
+              <input type="hidden" name="vm-filter" value="{{.VMFilter}}">
+              <div class="field is-pulled-right">
+                <div class="control">
+                  <button class="button is-outlined is-warning" name="action" value="dnb">Do Not Boot</button>
+                </div>
+              </div>
+              <div class="field is-pulled-right">
+                <div class="control">
+                  <button class="button is-inverted is-warning" name="action" value="boot">Boot</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <progress class="progress is-small is-warning" value="100" max="100"></progress>
+          <table class="table is-fullwidth">
+            <thead>
+              <tr>
+                <th><input type="checkbox" onclick="toggle(this);"></th>
+                <th>Name</th>
+                <th>VNC</th>
+                <th>Taps</th>
+                <th>Boot</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{range .VMs}}
+              <tr>
+                <td><input type="checkbox" name="vms" value="{{.Name}}"></td>
+                <td>{{.Name}}</td>
+                <td><a class="has-text-warning">vnc</a></td>
+                <td>tap165</td>
+                <td>{{not .DNB}}</td>
+              </tr>
+              {{end}}
+            </tbody>
+          </table>
+        </form>
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+
+<script>
+  function toggle(source) {
+    var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+
+    for (var i = 0; i < checkboxes.length; i++) {
+      if (checkboxes[i] != source) {
+        checkboxes[i].checked = source.checked;
+      }
+    }
+  }
+</script>
+{{end}}
