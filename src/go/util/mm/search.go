@@ -52,12 +52,11 @@ type ExpressionTree struct {
 }
 
 func (node *ExpressionTree) PrintTree() {
-
 	if node == nil {
 		return
 	}
 
-	fmt.Printf("Node: %s - Fields: %v\n", node.term, node.searchFields)
+	plog.Debug("", "term", node.term, "fields", node.searchFields)
 
 	node.left.PrintTree()
 	node.right.PrintTree()
@@ -118,7 +117,6 @@ func BuildTree(searchFilter string) *ExpressionTree {
 	}
 
 	return expressionTree
-
 }
 
 func (node *ExpressionTree) Evaluate(vm *VM) bool {
@@ -392,7 +390,6 @@ func (node *ExpressionTree) match(vm *VM) bool {
 			}
 		case "Labels":
 			for k, v := range vm.Labels {
-
 				match := strings.Contains(strings.ToLower(k+":"+v), node.term)
 				if match {
 					return match

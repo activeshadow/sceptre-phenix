@@ -78,16 +78,19 @@ func List(expName string) ([]mm.VM, error) {
 		}
 
 		vm := mm.VM{
-			ID:         idx,
-			Name:       node.General().Hostname(),
-			Experiment: exp.Spec.ExperimentName(),
-			CPUs:       node.Hardware().VCPU(),
-			RAM:        node.Hardware().Memory(),
-			Disk:       disk,
-			Interfaces: make(map[string]string),
-			DoNotBoot:  dnb,
-			Type:       node.Type(),
-			OSType:     node.Hardware().OSType(),
+			ID:          idx,
+			Name:        node.General().Hostname(),
+			Experiment:  exp.Spec.ExperimentName(),
+			CPUs:        node.Hardware().VCPU(),
+			RAM:         node.Hardware().Memory(),
+			Disk:        disk,
+			Interfaces:  make(map[string]string),
+			DoNotBoot:   dnb,
+			Type:        node.Type(),
+			OSType:      node.Hardware().OSType(),
+			Metadata:    make(map[string]any),
+			Labels:      node.Labels(),
+			Annotations: node.Annotations(),
 		}
 
 		for _, iface := range node.Network().Interfaces() {
@@ -96,6 +99,14 @@ func List(expName string) ([]mm.VM, error) {
 			if iface.VLAN() != "" { // might be empty for external nodes
 				vm.Networks = append(vm.Networks, iface.VLAN())
 				vm.Interfaces[iface.VLAN()] = iface.Address() // empty for DHCP
+			}
+		}
+
+		for _, app := range exp.Apps() {
+			for _, h := range app.Hosts() {
+				if h.Hostname() == vm.Name {
+					vm.Metadata[app.Name()] = h.Metadata
+				}
 			}
 		}
 
@@ -188,7 +199,7 @@ func Get(expName, vmName string) (*mm.VM, error) {
 			Interfaces:  make(map[string]string),
 			DoNotBoot:   *node.General().DoNotBoot(),
 			OSType:      string(node.Hardware().OSType()),
-			Metadata:    make(map[string]interface{}),
+			Metadata:    make(map[string]any),
 			Labels:      node.Labels(),
 			Annotations: node.Annotations(),
 		}
