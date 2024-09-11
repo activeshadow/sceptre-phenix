@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -183,12 +184,7 @@ func (this Minimega) GetVMInfo(opts ...Option) VMs {
 		}
 
 		s = row["tags"]
-		s = strings.TrimPrefix(s, "{")
-		s = strings.TrimSuffix(s, "}")
-
-		if s != "" {
-			vm.Tags = strings.Split(s, ",")
-		}
+		json.Unmarshal([]byte(s), &vm.Tags)
 
 		// Make sure the VM name is set prior to calling `GetVMCaptures`, as the VM
 		// name is not always set when calling `GetVMInfo`.
