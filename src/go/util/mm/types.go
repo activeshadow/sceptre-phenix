@@ -215,7 +215,7 @@ type VM struct {
 	CPUs            int       `json:"cpus"`
 	RAM             int       `json:"ram"`
 	Disk            string    `json:"disk"`
-	InjectPartition int       `json:"inject_partition`
+	InjectPartition int       `json:"inject_partition"`
 	OSType          string    `json:"osType"`
 	DoNotBoot       bool      `json:"dnb"`
 	Networks        []string  `json:"networks"`

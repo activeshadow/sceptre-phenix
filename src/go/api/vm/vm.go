@@ -9,17 +9,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
-
 	"phenix/api/experiment"
 	"phenix/util"
 	"phenix/util/common"
 	"phenix/util/file"
 	"phenix/util/mm"
 	"phenix/util/mm/mmcli"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -96,6 +95,8 @@ func List(expName string) ([]mm.VM, error) {
 			Type:            node.Type(),
 			OSType:          node.Hardware().OSType(),
 			Snapshot:        snapshot,
+			Labels:          node.Labels(),
+			Annotations:     node.Annotations(),
 		}
 
 		for _, iface := range node.Network().Interfaces() {
@@ -394,15 +395,13 @@ func Restart(expName, vmName string) error {
 	}
 
 	state, err := mm.GetVMState(mm.NS(expName), mm.VMName(vmName))
-
 	if err != nil {
 		return fmt.Errorf("Retrieving state for VM %s in experiment %s: %w", vmName, expName, err)
 	}
 
-	//Using "system_reset" on a VM that is in the "QUIT" state fails
+	// Using "system_reset" on a VM that is in the "QUIT" state fails
 	if state == "QUIT" {
 		return mm.StartVM(mm.NS(expName), mm.VMName(vmName))
-
 	}
 
 	cmd := mmcli.NewNamespacedCommand(expName)
@@ -433,7 +432,7 @@ func Shutdown(expName, vmName string) error {
 		return fmt.Errorf("retrieving state for VM %s in experiment %s: %w", vmName, expName, err)
 	}
 
-	//No need to power off a VM that has already been powered down
+	// No need to power off a VM that has already been powered down
 	if state == "QUIT" {
 		return nil
 	}
@@ -801,9 +800,9 @@ func Snapshot(expName, vmName, out string, cb func(string)) error {
 	cmd.Command = "vm migrate"
 	cmd.Columns = []string{"name", "status", "complete (%)"}
 	cmd.Filters = []string{"name=" + vmName}
-	//Adding a 1 second delay before calling "vm migrate"
-	//for a status update appears to prevent the status call
-	//from crashing minimega
+	// Adding a 1 second delay before calling "vm migrate"
+	// for a status update appears to prevent the status call
+	// from crashing minimega
 	time.Sleep(1 * time.Second)
 	for {
 		status := mmcli.RunTabular(cmd)[0]
@@ -866,7 +865,6 @@ func Snapshot(expName, vmName, out string, cb func(string)) error {
 	}
 
 	return nil
-
 }
 
 func Restore(expName, vmName, snap string) error {
@@ -944,7 +942,6 @@ func Restore(expName, vmName, snap string) error {
 	}
 
 	return nil
-
 }
 
 func CommitToDisk(expName, vmName, out string, cb func(float64)) (string, error) {
@@ -1177,17 +1174,15 @@ func CommitToDisk(expName, vmName, out string, cb func(float64)) (string, error)
 		return "", fmt.Errorf("syncing new backing image across cluster: %w", err)
 	}
 
-	//restart the vm
+	// restart the vm
 	if err := mm.StartVM(mm.NS(expName), mm.VMName(vmName)); err != nil {
 		return "", fmt.Errorf("starting VM: %w", err)
 	}
 
 	return out, nil
-
 }
 
 func MemorySnapshot(expName, vmName, out string, cb func(string)) (string, error) {
-
 	_, err := Get(expName, vmName)
 	if err != nil {
 		return "", fmt.Errorf("getting VM details: %w", err)
@@ -1245,7 +1240,6 @@ func MemorySnapshot(expName, vmName, out string, cb func(string)) (string, error
 
 	if err := mmcli.ErrorResponse(mmcli.Run(cmd)); err != nil {
 		return "", fmt.Errorf("starting memory snapshot for VM %s: ERROR: %w", vmName, err)
-
 	}
 
 	qmp = fmt.Sprintf(`{ "execute": "query-dump" }`)
@@ -1313,14 +1307,12 @@ func MemorySnapshot(expName, vmName, out string, cb func(string)) (string, error
 	}
 
 	return out, nil
-
 }
 
 // CaptureSubnet starts packet captures for all the VMs that
 // have an interface in the specified subnet.  The vmList argument
 // is optional and defines the list of VMs to search.
 func CaptureSubnet(expName, subnet string, vmList []string) ([]mm.Capture, error) {
-
 	// Make sure the experiment is running
 	exp, err := experiment.Get(expName)
 	if err != nil {
@@ -1332,13 +1324,11 @@ func CaptureSubnet(expName, subnet string, vmList []string) ([]mm.Capture, error
 	}
 
 	vms, err := List(expName)
-
 	if err != nil {
 		return nil, fmt.Errorf("Getting vm list for %s failed", expName)
 	}
 
 	_, refNet, err := net.ParseCIDR(subnet)
-
 	if err != nil {
 		return nil, fmt.Errorf("Unable to parse %s", subnet)
 	}
@@ -1355,7 +1345,6 @@ func CaptureSubnet(expName, subnet string, vmList []string) ([]mm.Capture, error
 		vmTable = make(map[string]struct{})
 
 		for _, vmName := range vmList {
-
 			if _, ok := vmTable[vmName]; !ok {
 				vmTable[vmName] = struct{}{}
 			}
@@ -1368,7 +1357,6 @@ func CaptureSubnet(expName, subnet string, vmList []string) ([]mm.Capture, error
 
 		// Make sure the VM is running
 		state, err := mm.GetVMState(mm.NS(expName), mm.VMName(vm.Name))
-
 		if err != nil {
 			continue
 		}
@@ -1415,7 +1403,6 @@ func CaptureSubnet(expName, subnet string, vmList []string) ([]mm.Capture, error
 	}
 
 	return allVMCaptures, nil
-
 }
 
 // StopCaptureSubnet will stop all captures for any VM
@@ -1425,7 +1412,6 @@ func CaptureSubnet(expName, subnet string, vmList []string) ([]mm.Capture, error
 // be stopped.  The subnet argument is optional.  If the subnet
 // argument is not specified, then all captures for all VMs will be stopped.
 func StopCaptureSubnet(expName, subnet string, vmList []string) ([]string, error) {
-
 	// Make sure the experiment is running
 	exp, err := experiment.Get(expName)
 	if err != nil {
@@ -1437,13 +1423,11 @@ func StopCaptureSubnet(expName, subnet string, vmList []string) ([]string, error
 	}
 
 	vms, err := List(expName)
-
 	if err != nil {
 		return nil, fmt.Errorf("Getting vm list for %s failed", expName)
 	}
 
 	_, refNet, err := net.ParseCIDR(subnet)
-
 	if err != nil {
 		refNet = nil
 	}
@@ -1460,7 +1444,6 @@ func StopCaptureSubnet(expName, subnet string, vmList []string) ([]string, error
 		vmTable = make(map[string]struct{})
 
 		for _, vmName := range vmList {
-
 			if _, ok := vmTable[vmName]; !ok {
 				vmTable[vmName] = struct{}{}
 			}
@@ -1478,7 +1461,6 @@ func StopCaptureSubnet(expName, subnet string, vmList []string) ([]string, error
 
 		// Make sure the VM is running
 		state, err := mm.GetVMState(mm.NS(expName), mm.VMName(vm.Name))
-
 		if err != nil {
 			continue
 		}
@@ -1515,7 +1497,6 @@ func StopCaptureSubnet(expName, subnet string, vmList []string) ([]string, error
 			}
 
 			if refNet.Contains(address) {
-
 				if StopCaptures(expName, vm.Name) == nil {
 					matchedVMs = append(matchedVMs, vm.Name)
 
@@ -1524,7 +1505,6 @@ func StopCaptureSubnet(expName, subnet string, vmList []string) ([]string, error
 					// for a VM should be stopped
 					break
 				}
-
 			}
 
 		}
@@ -1532,12 +1512,10 @@ func StopCaptureSubnet(expName, subnet string, vmList []string) ([]string, error
 	}
 
 	return matchedVMs, nil
-
 }
 
 // Changes the optical disc in the first drive
 func ChangeOpticalDisc(expName, vmName, isoPath string) error {
-
 	if expName == "" {
 		return fmt.Errorf("no experiment name provided")
 	}
@@ -1562,7 +1540,6 @@ func ChangeOpticalDisc(expName, vmName, isoPath string) error {
 
 // Ejects the optical disc in the first drive
 func EjectOpticalDisc(expName, vmName string) error {
-
 	if expName == "" {
 		return fmt.Errorf("no experiment name provided")
 	}

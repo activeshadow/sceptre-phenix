@@ -12,6 +12,8 @@ TEMPLATES := $(shell find tmpl/templates -name '*')
 
 TUNNELSOURCES := $(shell find tunneler -name '*.go' )
 
+UGLYUISOURCES := $(shell find ugly -name '*.go' )
+
 THISFILE := $(lastword $(MAKEFILE_LIST))
 THISDIR  := $(shell dirname $(realpath $(THISFILE)))
 GOBIN    := $(THISDIR)/bin
@@ -141,3 +143,7 @@ bin/phenix-tunneler-darwin-amd64: $(TUNNELSOURCES)
 bin/phenix-tunneler-windows-amd64.exe: $(TUNNELSOURCES)
 	mkdir -p bin
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -a -ldflags="-X 'phenix/version.Commit=$(COMMIT)' -s -w" -trimpath -o bin/phenix-tunneler-windows-amd64.exe $(TUNNELSOURCES)
+
+bin/phenix-ugly-ui: $(UGLYUISOURCES)
+	mkdir -p bin
+	CGO_ENABLED=0 GOOS=linux go build -a -ldflags="-s -w" -trimpath -o bin/phenix-ugly-ui $(UGLYUISOURCES)
