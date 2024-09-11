@@ -206,28 +206,28 @@ func (this VMs) Paginate(page, size int) VMs {
 }
 
 type VM struct {
-	ID         int       `json:"id"`
-	Name       string    `json:"name"`
-	Type       string    `json:"type"`
-	Experiment string    `json:"experiment"`
-	Host       string    `json:"host"`
-	IPv4       []string  `json:"ipv4"`
-	CPUs       int       `json:"cpus"`
-	RAM        int       `json:"ram"`
-	Disk       string    `json:"disk"`
-	OSType     string    `json:"osType"`
-	DoNotBoot  bool      `json:"dnb"`
-	Networks   []string  `json:"networks"`
-	Taps       []string  `json:"taps"`
-	Captures   []Capture `json:"captures"`
-	State      string    `json:"state"`
-	Running    bool      `json:"running"`
-	Busy       bool      `json:"busy"`
-	CCActive   bool      `json:"ccActive"`
-	Uptime     float64   `json:"uptime"`
-	Screenshot string    `json:"screenshot,omitempty"`
-	CdRom      string    `json:"cdRom"`
-	Tags       []string  `json:"tags"`
+	ID         int               `json:"id"`
+	Name       string            `json:"name"`
+	Type       string            `json:"type"`
+	Experiment string            `json:"experiment"`
+	Host       string            `json:"host"`
+	IPv4       []string          `json:"ipv4"`
+	CPUs       int               `json:"cpus"`
+	RAM        int               `json:"ram"`
+	Disk       string            `json:"disk"`
+	OSType     string            `json:"osType"`
+	DoNotBoot  bool              `json:"dnb"`
+	Networks   []string          `json:"networks"`
+	Taps       []string          `json:"taps"`
+	Captures   []Capture         `json:"captures"`
+	State      string            `json:"state"`
+	Running    bool              `json:"running"`
+	Busy       bool              `json:"busy"`
+	CCActive   bool              `json:"ccActive"`
+	Uptime     float64           `json:"uptime"`
+	Screenshot string            `json:"screenshot,omitempty"`
+	CdRom      string            `json:"cdRom"`
+	Tags       map[string]string `json:"tags"`
 
 	// Used internally to track network <--> IP relationship, since
 	// network ordering from minimega may not be the same as network
@@ -235,9 +235,9 @@ type VM struct {
 	Interfaces map[string]string `json:"-"`
 
 	// Used internally for showing VM details.
-	Metadata    map[string]interface{} `json:"-"`
-	Labels      map[string]string      `json:"-"`
-	Annotations map[string]interface{} `json:"-"`
+	Metadata    map[string]any    `json:"-"`
+	Labels      map[string]string `json:"-"`
+	Annotations map[string]any    `json:"-"`
 
 	// Used internally to check for active CC agent.
 	UUID string `json:"-"`
@@ -261,8 +261,20 @@ func (this VM) Copy() VM {
 	vm.Captures = make([]Capture, len(this.Captures))
 	copy(vm.Captures, this.Captures)
 
-	vm.Tags = make([]string, len(this.Tags))
-	copy(vm.Tags, this.Tags)
+	vm.Tags = make(map[string]string)
+	for k, v := range this.Tags {
+		vm.Tags[k] = v
+	}
+
+	vm.Labels = make(map[string]string)
+	for k, v := range this.Labels {
+		vm.Labels[k] = v
+	}
+
+	vm.Annotations = make(map[string]any)
+	for k, v := range this.Annotations {
+		vm.Annotations[k] = v
+	}
 
 	return vm
 }

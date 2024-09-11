@@ -15,7 +15,7 @@ var (
 	boolOps             = regexp.MustCompile(`^(?:and|or|not)$`)
 	groups              = regexp.MustCompile(`(?:[(][^ ])|(?:[^ ][)])`)
 	keywordEscape       = regexp.MustCompile(`['"]([^'"]+)['"]`)
-	defaultSearchFields = []string{"Name", "Networks", "Host", "Disk", "Tags"}
+	defaultSearchFields = []string{"Name", "Networks", "Host", "Disk", "Tags", "Labels"}
 )
 
 type Stack struct {
@@ -57,7 +57,7 @@ func (node *ExpressionTree) PrintTree() {
 		return
 	}
 
-	//fmt.Printf("Node:%s Fields:%v\n",node.term,node.searchFields)
+	fmt.Printf("Node: %s - Fields: %v\n", node.term, node.searchFields)
 
 	node.left.PrintTree()
 	node.right.PrintTree()
@@ -380,9 +380,9 @@ func (node *ExpressionTree) match(vm *VM) bool {
 		case "Tags":
 			{
 
-				for _, tag := range vm.Tags {
+				for k, v := range vm.Tags {
 
-					match := strings.Contains(strings.ToLower(tag), node.term)
+					match := strings.Contains(strings.ToLower(k+":"+v), node.term)
 					if match {
 						return match
 					}
@@ -390,6 +390,16 @@ func (node *ExpressionTree) match(vm *VM) bool {
 
 				continue
 			}
+		case "Labels":
+			for k, v := range vm.Labels {
+
+				match := strings.Contains(strings.ToLower(k+":"+v), node.term)
+				if match {
+					return match
+				}
+			}
+
+			continue
 		case "Disk":
 			{
 
