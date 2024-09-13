@@ -1,9 +1,10 @@
 package main
 
 import (
+	"strings"
+
 	"phenix/util/mm"
 	"phenix/util/plog"
-	"strings"
 )
 
 func filterVMs(vms []mm.VM, filter string) []VM {

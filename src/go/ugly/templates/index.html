@@ -86,7 +86,7 @@
               <tr>
                 <td><input type="checkbox" name="vms" value="{{.Name}}"></td>
                 <td>{{.Name}}</td>
-                <td><a class="has-text-warning">vnc</a></td>
+                <td><a class="has-text-warning" target="_" href="{{$.BasePath}}/experiments/{{$.Experiment}}/vms/{{.Name}}/vnc">vnc</a></td>
                 <td>tap165</td>
                 <td>{{not .DNB}}</td>
               </tr>
