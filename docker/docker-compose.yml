@@ -20,6 +20,7 @@ services:
         APPS_BRANCH: caldera
     command:
     - phenix
+    - --log.level=debug
     - ui
     - --hostname-suffixes=-minimega,-phenix
     - --minimega-console
@@ -37,6 +38,7 @@ services:
       - /phenix:/phenix:shared
       - ./tmp/minimega:/tmp/minimega
       - ./tmp/phenix:/tmp/phenix
+      - ../src/go/web/templates:/opt/phenix/web/templates
     depends_on:
       - minimega
     healthcheck:
