@@ -171,6 +171,7 @@ COPY --from=gobuilder /go/bin/phenix-app-* /usr/local/bin
 COPY --from=gobuilder /phenix/src/go/bin/phenix-tunneler-* /opt/phenix/downloads/tunneler/
 
 COPY --from=gobuilder /phenix/src/go/bin/phenix-ugly-ui /usr/local/bin/phenix-ugly-ui
+COPY ./src/go/ugly/public    /opt/phenix/ugly/public
 COPY ./src/go/ugly/templates /opt/phenix/ugly/templates
 
 # Update GitHub workflow config to change the minimum version of minimega

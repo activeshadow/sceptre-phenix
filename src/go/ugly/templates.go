@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"io"
 	"path/filepath"
+	"strings"
 )
 
 type Params struct {
@@ -27,7 +28,7 @@ var files embed.FS
 */
 
 var (
-	tmplPath = "/opt/phenix/ugly/templates"
+	tmplPath string
 	/*
 		indexTmpl       *template.Template
 		experimentsTmpl *template.Template
@@ -37,9 +38,9 @@ var (
 
 /*
 func init() {
-	index = parse("index.html")
-	experiments = parse("experiments.html")
-	experiment = parse("experiment.html")
+		index = parse("index.html")
+		experiments = parse("experiments.html")
+		experiment = parse("experiment.html")
 }
 */
 
@@ -57,4 +58,58 @@ func parse(file string) *template.Template {
 func Index(w io.Writer, p Params) error {
 	tmpl := parse("index.html")
 	return tmpl.Execute(w, p)
+}
+
+// TODO: refactor these at some point
+
+type bannerConfig struct {
+	BannerLines     []string `mapstructure:"banner"`
+	BackgroundColor string   `mapstructure:"backgroundColor"`
+	TextColor       string   `mapstructure:"textColor"`
+
+	// Use type interface{} here so it can either be a simple string or a
+	// template.HTML string (safe HTML).
+	Banner interface{} `mapstructure:"-"`
+}
+
+type vncConfig struct {
+	BasePath string
+	Token    string
+	ExpName  string
+	VMName   string
+
+	TopBanner    bannerConfig `mapstructure:"topBanner"`
+	BottomBanner bannerConfig `mapstructure:"bottomBanner"`
+}
+
+func newVNCBannerConfig(exp, vm string) *vncConfig {
+	return &vncConfig{
+		BasePath: basePath,
+		ExpName:  exp,
+		VMName:   vm,
+		TopBanner: bannerConfig{
+			BackgroundColor: "white",
+			TextColor:       "black",
+		},
+		BottomBanner: bannerConfig{
+			BackgroundColor: "white",
+			TextColor:       "black",
+		},
+	}
+}
+
+func (this *vncConfig) finalize(banner ...string) {
+	if len(banner) > 0 {
+		this.TopBanner.Banner = template.HTML(strings.Join(banner, "<br/>"))
+		this.BottomBanner.Banner = template.HTML(strings.Join(banner, "<br/>"))
+		return
+	}
+
+	if len(this.TopBanner.BannerLines) > 0 {
+		this.TopBanner.Banner = template.HTML(strings.Join(this.TopBanner.BannerLines, "<br/>"))
+	}
+
+	if len(this.BottomBanner.BannerLines) > 0 {
+		this.BottomBanner.Banner = template.HTML(strings.Join(this.BottomBanner.BannerLines, "<br/>"))
+	}
 }
