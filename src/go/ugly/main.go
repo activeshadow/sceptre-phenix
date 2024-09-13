@@ -80,7 +80,7 @@ func main() {
 
 	router.HandleFunc("/experiments/{name}", func(w http.ResponseWriter, r *http.Request) {
 		var (
-			exp    = mux.Vars(r)["name"]
+			name   = mux.Vars(r)["name"]
 			action = r.FormValue("action")
 
 			vms []string
@@ -90,18 +90,22 @@ func main() {
 			vms = r.Form["vms"]
 		}
 
-		switch action {
-		case "boot":
-			for _, name := range vms {
-				vm.Update(vm.UpdateExperiment(exp), vm.UpdateVM(name), vm.UpdateWithDNB(false))
-			}
-		case "dnb":
-			for _, name := range vms {
-				vm.Update(vm.UpdateExperiment(exp), vm.UpdateVM(name), vm.UpdateWithDNB(true))
+		exp, _ := experiment.Get(name)
+
+		for _, name := range vms {
+			vm := exp.Spec.Topology().FindNodeByName(name)
+
+			switch action {
+			case "boot":
+				vm.General().SetDoNotBoot(false)
+			case "dnb":
+				vm.General().SetDoNotBoot(true)
 			}
 		}
 
-		http.Redirect(w, r, fmt.Sprintf("%s/?experiment=%s&vm-filter=%s", basePath, exp, r.FormValue("vm-filter")), http.StatusSeeOther)
+		experiment.Save(experiment.SaveWithName(name), experiment.SaveWithSpec(exp.Spec))
+
+		http.Redirect(w, r, fmt.Sprintf("%s/?experiment=%s&vm-filter=%s", basePath, name, r.FormValue("vm-filter")), http.StatusSeeOther)
 	})
 
 	// GET /experiments/{exp}/vms/{name}/vnc
