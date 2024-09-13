@@ -70,6 +70,8 @@ ARG PHENIX_TAG
 RUN COMMIT=${PHENIX_COMMIT} TAG=${PHENIX_TAG} make bin/phenix
 RUN make -C src/go phenix-tunneler
 
+RUN make -C src/go bin/phenix-ugly-ui
+
 # Allow installing from a fork of sceptre-phenix-apps that could
 # exist on GitHub or elsewhere.
 ARG APPS_REPO=github.com/sandialabs/sceptre-phenix-apps
@@ -167,6 +169,9 @@ COPY --from=gobuilder /phenix/bin/phenix   /usr/local/bin/phenix
 COPY --from=gobuilder /go/bin/phenix-app-* /usr/local/bin
 
 COPY --from=gobuilder /phenix/src/go/bin/phenix-tunneler-* /opt/phenix/downloads/tunneler/
+
+COPY --from=gobuilder /phenix/src/go/bin/phenix-ugly-ui /usr/local/bin/phenix-ugly-ui
+COPY ./src/go/ugly/templates /opt/phenix/ugly/templates
 
 # Update GitHub workflow config to change the minimum version of minimega
 # required for use with phenix.
