@@ -48,16 +48,22 @@ func main() {
 		http.Redirect(w, r, basePath+"/", http.StatusSeeOther)
 	})
 
+	router.PathPrefix("/images/").Handler(
+		http.FileServer(http.Dir(assetPath + "/public")),
+	)
+
 	router.PathPrefix("/novnc/").Handler(
 		http.FileServer(http.Dir(assetPath + "/public")),
 	)
 
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		var (
-			vmFilter       = r.FormValue("vm-filter")
 			params         = NewParams(r.FormValue("experiment"))
+			vmFilter       = r.FormValue("vm-filter")
 			experiments, _ = experiment.List()
 		)
+
+		params.Modal = r.FormValue("modal")
 
 		plog.Debug("GET index", "exp", r.FormValue("experiment"), "vm-filter", vmFilter)
 
@@ -67,6 +73,7 @@ func main() {
 			if params.Experiment == exp.Metadata.Name {
 				params.Topology = exp.Metadata.Annotations["topology"]
 				params.Scenario = exp.Metadata.Annotations["scenario"]
+				params.Running = exp.Running()
 
 				vms, _ := vm.List(exp.Metadata.Name)
 

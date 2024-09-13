@@ -15,6 +15,25 @@ type Params struct {
 	Scenario    string
 	VMs         []VM
 	VMFilter    string
+
+	Running bool
+	Modal   string
+}
+
+func (this Params) ExperimentRunning() string {
+	if this.Running {
+		return "you bet!"
+	}
+
+	return "sadly, no..."
+}
+
+func (this Params) ModalIsActive() string {
+	if this.Modal != "" {
+		return "is-active"
+	}
+
+	return ""
 }
 
 type VM struct {

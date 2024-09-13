@@ -38,7 +38,7 @@
           </div>
           <div class="column is-one-fifth">
             <p class="title is-6">Running</p>
-            <p class="subtitle is-6">yes</p>
+            <p class="subtitle is-6">{{.ExperimentRunning}}</p>
           </div>
           <div class="column">
             <form method="GET">
@@ -76,19 +76,33 @@
               <tr>
                 <th><input type="checkbox" onclick="toggle(this);"></th>
                 <th>Name</th>
-                <th>VNC</th>
-                <th>Taps</th>
+                <th>Screenshot</th>
+                <th>Host</th>
+                <th>IPv4</th>
+                <th>Network</th>
+                <th>Tap</th>
+                {{if .Running}}
+                <th>Uptime</th>
+                {{else}}
                 <th>Boot</th>
+                {{end}}
               </tr>
             </thead>
             <tbody>
               {{range .VMs}}
               <tr>
                 <td><input type="checkbox" name="vms" value="{{.Name}}"></td>
-                <td>{{.Name}}</td>
-                <td><a class="has-text-warning" target="_" href="{{$.BasePath}}/experiments/{{$.Experiment}}/vms/{{.Name}}/vnc">vnc</a></td>
-                <td>tap165</td>
+                <td><a class="has-text-warning" href="{{$.BasePath}}/?experiment={{$.Experiment}}&vm-filter={{$.VMFilter}}&modal={{.Name}}">{{.Name}}</a></td>
+                <td><a target="_blank" href="{{$.BasePath}}/experiments/{{$.Experiment}}/vms/{{.Name}}/vnc"><img width="100px" src="{{$.BasePath}}/images/screenshot.png"></a></td>
+                <td>n/a</td>
+                <td>n/a</td>
+                <td>n/a</td>
+                <td>n/a</td>
+                {{if $.Running}}
+                <th>n/a</th>
+                {{else}}
                 <td>{{not .DNB}}</td>
+                {{end}}
               </tr>
               {{end}}
             </tbody>
@@ -97,6 +111,22 @@
       </div>
     </div>
     {{end}}
+  </div>
+</div>
+
+<div class="modal {{.ModalIsActive}}">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">VM Details: {{$.Modal}}</p>
+      <a class="button delete is-large" aria-label="close" href="{{$.BasePath}}/?experiment={{$.Experiment}}&vm-filter={{$.VMFilter}}"></a>
+    </header>
+    <section class="modal-card-body">
+      this is a test...
+    </section>
+    <footer class="modal-card-foot">
+      Like my feet?!
+    </footer>
   </div>
 </div>
 
