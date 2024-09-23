@@ -81,9 +81,7 @@
                 <th>IPv4</th>
                 <th>Network</th>
                 <th>Tap</th>
-                {{if .Running}}
-                <th>Uptime</th>
-                {{else}}
+                {{if not .Running}}
                 <th>Boot</th>
                 {{end}}
               </tr>
@@ -98,9 +96,7 @@
                 <td>n/a</td>
                 <td>n/a</td>
                 <td>n/a</td>
-                {{if $.Running}}
-                <th>n/a</th>
-                {{else}}
+                {{if not $.Running}}
                 <td>{{not .DNB}}</td>
                 {{end}}
               </tr>

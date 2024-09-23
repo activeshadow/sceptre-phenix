@@ -38,8 +38,6 @@ func main() {
 
 	tmplPath = assetPath + "/templates"
 
-	plog.Debug("UI config", "templates", tmplPath, "base URL", basePath, "port", 3001)
-
 	store.Init(store.Endpoint("bolt:///etc/phenix/store.bdb"))
 
 	router := mux.NewRouter().StrictSlash(true)
@@ -75,7 +73,19 @@ func main() {
 				params.Scenario = exp.Metadata.Annotations["scenario"]
 				params.Running = exp.Running()
 
-				vms, _ := vm.List(exp.Metadata.Name)
+				var vms []mm.VM
+
+				if exp.Running() {
+					list, _ := vm.List(exp.Metadata.Name)
+
+					for _, vm := range list {
+						if vm.Running {
+							vms = append(vms, vm)
+						}
+					}
+				} else {
+					vms, _ = vm.List(exp.Metadata.Name)
+				}
 
 				params.VMs = filterVMs(vms, vmFilter)
 				params.VMFilter = vmFilter
@@ -179,7 +189,14 @@ func main() {
 		websocket.Handler(util.ConnectWSHandler(endpoint)).ServeHTTP(w, r)
 	})
 
-	if err := http.ListenAndServe(":3001", router); err != nil {
+	port := os.Getenv("PHENIX_UGLY_UI_PORT")
+	if port == "" {
+		port = ":3001"
+	}
+
+	plog.Debug("UI config", "assets", assetPath, "templates", tmplPath, "base URL", basePath, "port", port)
+
+	if err := http.ListenAndServe(port, router); err != nil {
 		fmt.Printf("ERROR: %v\n", err)
 	}
 }
