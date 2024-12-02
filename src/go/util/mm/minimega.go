@@ -17,8 +17,6 @@ import (
 	"phenix/util/common"
 	"phenix/util/mm/mmcli"
 	"phenix/util/plog"
-
-	"github.com/hashicorp/go-multierror"
 )
 
 var (
@@ -533,17 +531,15 @@ func (Minimega) CreateTunnel(opts ...Option) error {
 
 	o := NewOptions(opts...)
 
-	var cmdPrefix string
-
-	if !IsHeadnode(host) {
-		cmdPrefix = fmt.Sprintf("mesh send %s namespace %s", host, o.ns)
-	}
-
 	cmd := mmcli.NewNamespacedCommand(o.ns)
-	cmd.Command = fmt.Sprintf("%s cc tunnel %s %d %s %d", cmdPrefix, o.vm, o.srcPort, o.dstHost, o.dstPort)
+	cmd.Command = fmt.Sprintf("cc tunnel %s %d %s %d", o.vm, o.srcPort, o.dstHost, o.dstPort)
 
-	if err := mmcli.ErrorResponse(mmcli.Run(cmd)); err != nil {
-		return fmt.Errorf("creating tunnel to %s (%d:%s:%d): %w", o.vm, o.srcPort, o.dstHost, o.dstPort, err)
+	if resp := mmcli.ErrorResponse(mmcli.Run(cmd)); resp != nil {
+		for _, err := range resp.Unwrap() {
+			if err.(mmcli.MiniError).Host == host {
+				return fmt.Errorf("creating tunnel to %s (%d:%s:%d): %w", o.vm, o.srcPort, o.dstHost, o.dstPort, err)
+			}
+		}
 	}
 
 	return nil
@@ -580,21 +576,18 @@ func (Minimega) CloseTunnel(opts ...Option) error {
 
 	o := NewOptions(opts...)
 
-	var (
-		cmdPrefix string
-		errs      error
-	)
-
-	if !IsHeadnode(host) {
-		cmdPrefix = fmt.Sprintf("mesh send %s namespace %s", host, o.ns)
-	}
+	var errs error
 
 	for _, row := range tunnels {
 		cmd := mmcli.NewNamespacedCommand(o.ns)
-		cmd.Command = fmt.Sprintf("%s cc tunnel close %s %s", cmdPrefix, o.vm, row["id"])
+		cmd.Command = fmt.Sprintf("cc tunnel close %s %s", o.vm, row["id"])
 
-		if err := mmcli.ErrorResponse(mmcli.Run(cmd)); err != nil {
-			errs = multierror.Append(errs, fmt.Errorf("closing tunnel to %s (%s:%d): %w", o.vm, o.dstHost, o.dstPort, err))
+		if resp := mmcli.ErrorResponse(mmcli.Run(cmd)); resp != nil {
+			for _, err := range resp.Unwrap() {
+				if err.(mmcli.MiniError).Host == host {
+					errs = errors.Join(errs, fmt.Errorf("closing tunnel to %s (%s:%d): %w", o.vm, o.dstHost, o.dstPort, err))
+				}
+			}
 		}
 	}
 
@@ -1105,7 +1098,7 @@ func (this Minimega) TapVLAN(opts ...TapOption) error {
 
 		cmd := fmt.Sprintf("tap delete %s", o.name)
 		if err := this.MeshSend(o.ns, o.host, cmd); err != nil {
-			errs = multierror.Append(errs, fmt.Errorf("deleting tap %s on node %s: %w", o.name, o.host, err))
+			errs = errors.Join(errs, fmt.Errorf("deleting tap %s on node %s: %w", o.name, o.host, err))
 		}
 
 		if o.netns != "" {

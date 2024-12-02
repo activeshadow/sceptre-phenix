@@ -13,8 +13,21 @@ import (
 
 	"github.com/activeshadow/libminimega/minicli"
 	"github.com/activeshadow/libminimega/miniclient"
-	"github.com/hashicorp/go-multierror"
 )
+
+type JoinedError interface {
+	Error() string
+	Unwrap() []error
+}
+
+type MiniError struct {
+	Host string
+	Err  error
+}
+
+func (this MiniError) Error() string {
+	return fmt.Sprintf("[%s] %s", this.Host, this.Err.Error())
+}
 
 var ErrTimeout = fmt.Errorf("timeout running command")
 
@@ -49,15 +62,15 @@ func wrapErr(err error) chan *miniclient.Response {
 }
 
 // ErrorResponse is used when only concerned with errors returned from a call to
-// minimega. A *multierror.Error will be returned containing a full list of all
-// the errors encountered.
-func ErrorResponse(responses chan *miniclient.Response) error {
-	var errs error
+// minimega. A JoinedError (errors.Join) will be returned containing a slice of
+// all the errors encountered.
+func ErrorResponse(responses chan *miniclient.Response) JoinedError {
+	var errs JoinedError
 
 	for response := range responses {
 		for _, resp := range response.Resp {
 			if resp.Error != "" {
-				errs = multierror.Append(errs, errors.New(resp.Error))
+				errs = errors.Join(errs, MiniError{Host: resp.Host, Err: errors.New(resp.Error)}).(JoinedError)
 			}
 		}
 	}
@@ -83,7 +96,7 @@ func SingleResponse(responses chan *miniclient.Response) (string, error) {
 
 		for _, r := range response.Resp {
 			if r.Error != "" {
-				err = errors.New(r.Error)
+				err = MiniError{Host: r.Host, Err: errors.New(r.Error)}
 				continue
 			}
 
@@ -124,7 +137,7 @@ func SingleDataResponse(responses chan *miniclient.Response) (interface{}, error
 
 		for _, r := range response.Resp {
 			if r.Error != "" {
-				err = errors.New(r.Error)
+				err = MiniError{Host: r.Host, Err: errors.New(r.Error)}
 				continue
 			}
 
