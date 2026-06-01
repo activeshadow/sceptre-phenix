@@ -4,21 +4,24 @@ metadata:
   name: headnode
 spec:
   hostNetwork: true
+  hostPID: true
   containers:
     - name: phenix
-      image: phenix
+      image: ghcr.io/sandialabs/sceptre-phenix/phenix:main
       args:
         - phenix
         - ui
         - --hostname-suffixes=-minimega,-phenix
+        - --minimega-console
       securityContext:
         privileged: true
         allowPrivilegeEscalation: true
       volumeMounts:
         - name: host-dev
           mountPath: /dev
-        - name: host-proc
-          mountPath: /proc
+        - name: host-localtime
+          mountPath: /etc/localtime
+          readOnly: true
         - name: host-tmp-minimega
           mountPath: /tmp/minimega
         - name: host-tmp-phenix
@@ -27,14 +30,41 @@ spec:
           mountPath: /var/log/phenix
         - name: host-etc-phenix
           mountPath: /etc/phenix
+        - name: host-netns
+          mountPath: /var/run/netns
+          mountPropagation: Bidirectional
         - name: host-phenix
           mountPath: /phenix
           mountPropagation: Bidirectional
+      readinessProbe:
+        exec:
+          command: ["phenix", "version"]
+        initialDelaySeconds: 10
+        periodSeconds: 10
+      livenessProbe:
+        exec:
+          command: ["phenix", "version"]
+        initialDelaySeconds: 30
+        periodSeconds: 20
     - name: minimega
-      image: ghcr.io/sandia-minimega/minimega:latest
+      image: ghcr.io/sandia-minimega/minimega:master
       env:
+        - name: MM_BASE
+          value: /tmp/minimega
         - name: MM_FILEPATH
           value: /phenix/images
+        - name: MM_PORT
+          value: "9000"
+        - name: MM_DEGREE
+          value: "0"
+        - name: MM_CONTEXT
+          value: phenix
+        - name: MM_LOGLEVEL
+          value: info
+        - name: MM_LOGFILE
+          value: /var/log/phenix/minimega.log
+        - name: MM_ABSSNAPSHOT
+          value: "true"
       securityContext:
         privileged: true
         allowPrivilegeEscalation: true
@@ -44,23 +74,42 @@ spec:
         - name: host-modules
           mountPath: /lib/modules
           readOnly: true
+        - name: host-localtime
+          mountPath: /etc/localtime
+          readOnly: true
         - name: host-tmp-minimega
           mountPath: /tmp/minimega
         - name: host-tmp-phenix
           mountPath: /tmp/phenix
+        - name: host-log-phenix
+          mountPath: /var/log/phenix
+        - name: host-netns
+          mountPath: /var/run/netns
+          mountPropagation: Bidirectional
         - name: host-phenix
           mountPath: /phenix
           mountPropagation: Bidirectional
+      readinessProbe:
+        exec:
+          command: ["minimega", "-e", "version"]
+        initialDelaySeconds: 10
+        periodSeconds: 10
+      livenessProbe:
+        exec:
+          command: ["minimega", "-e", "version"]
+        initialDelaySeconds: 30
+        periodSeconds: 20
   volumes:
     - name: host-dev
       hostPath:
         path: /dev
-    - name: host-proc
-      hostPath:
-        path: /proc
     - name: host-modules
       hostPath:
         path: /lib/modules
+    - name: host-localtime
+      hostPath:
+        path: /etc/localtime
+        type: File
     - name: host-tmp-minimega
       hostPath:
         path: /tmp/minimega
@@ -76,6 +125,10 @@ spec:
     - name: host-etc-phenix
       hostPath:
         path: /etc/phenix
+        type: DirectoryOrCreate
+    - name: host-netns
+      hostPath:
+        path: /var/run/netns
         type: DirectoryOrCreate
     - name: host-phenix
       hostPath:
