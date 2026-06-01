@@ -1,7 +1,9 @@
 package file
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -16,6 +18,7 @@ var DefaultClusterFiles ClusterFiles = new(MMClusterFiles) //nolint:gochecknoglo
 
 const snapshotBoth = "both"
 const scorchComponentIndex = 2
+const copyFileReadyAttempts = 5
 
 type ClusterFiles interface {
 	GetExperimentFiles(exp, filter string) (Files, error)
@@ -259,9 +262,36 @@ func (MMClusterFiles) CopyFile(path, dest string, status CopyStatus) error {
 		if !found {
 			break
 		}
+
+		time.Sleep(time.Second)
+	}
+
+	err = waitForCopyDestinationFile(path)
+	if err != nil {
+		return fmt.Errorf("file transfer failed: %w", err)
 	}
 
 	return nil
+}
+
+// waitForCopyDestinationFile waits for a copied file to be readable on the headnode.
+func waitForCopyDestinationFile(path string) error {
+	fullPath := filepath.Join(common.PhenixBase, "images", path)
+
+	for i := 0; i < copyFileReadyAttempts; i++ {
+		info, err := os.Stat(fullPath)
+		if err == nil && !info.IsDir() {
+			return nil
+		}
+
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("checking destination file: %w", err)
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return errors.New("file not available after transfer")
 }
 
 func (MMClusterFiles) SyncFile(path string, status CopyStatus) error {
