@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -63,15 +63,15 @@ func JWTFromContext(ctx context.Context) string {
 	return jwt
 }
 
-func fromPhenixAuthTokenHeader(r *http.Request) (string, error) {
-	authHeader := r.Header.Get("X-Phenix-Auth-Token")
+func fromPhenixAuthTokenHeader(r *http.Request, proxyAuthHeader string) (string, error) {
+	authHeader := r.Header.Get(proxyAuthHeader)
 	if authHeader == "" {
 		return "", nil // No error, just no token
 	}
 
 	authHeaderParts := strings.Split(authHeader, " ")
 	if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
-		return "", errors.New("x-phenix-auth-token header format must be 'Bearer {token}'")
+		return "", fmt.Errorf("%s header format must be 'Bearer {token}'", proxyAuthHeader)
 	}
 
 	return authHeaderParts[1], nil
@@ -107,7 +107,7 @@ func Auth(jwtKey, proxyAuthHeader string) mux.MiddlewareFunc {
 			// proxy authentication via basic auth (or other means of proxy
 			// authentication that might end up overwriting the Authorization header).
 			Extractor: jwtmiddleware.FromFirst(
-				fromPhenixAuthTokenHeader,
+				func(r *http.Request) (string, error) { return fromPhenixAuthTokenHeader(r, proxyAuthHeader) },
 				jwtmiddleware.FromParameter("token"),
 			),
 			ValidationKeyGetter: func(_ *jwt.Token) (any, error) {
@@ -126,11 +126,11 @@ func Auth(jwtKey, proxyAuthHeader string) mux.MiddlewareFunc {
 
 	validTokenMiddleware := func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			raw, err := fromPhenixAuthTokenHeader(r)
+			raw, err := fromPhenixAuthTokenHeader(r, proxyAuthHeader)
 			if err != nil {
 				plog.Error(
 					plog.TypeSecurity,
-					"getting raw JWT from X-phenix-auth-token header",
+					fmt.Sprintf("getting raw JWT from %s header", proxyAuthHeader),
 					"err",
 					err,
 				)
