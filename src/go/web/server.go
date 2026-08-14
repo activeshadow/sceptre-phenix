@@ -6,10 +6,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
-
-	"github.com/gorilla/mux"
-
 	"phenix/util/common"
 	"phenix/util/plog"
 	"phenix/web/broker"
@@ -18,6 +14,9 @@ import (
 	"phenix/web/rbac"
 	"phenix/web/scorch"
 	"phenix/web/weberror"
+	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 type route struct {
@@ -95,6 +94,14 @@ func ConfigureUsers(users []string) error {
 //nolint:funlen,maintidx // server startup
 func Start(opts ...ServerOption) error {
 	o = newServerOptions(opts...)
+	if o.authMode != "legacy" && o.authMode != "proxied" {
+		return fmt.Errorf("invalid ui.auth-mode %q", o.authMode)
+	}
+
+	if o.authMode == "proxied" && o.jwtKey == "" {
+		return fmt.Errorf("ui.jwt-signing-key is required when ui.auth-mode is proxied")
+	}
+
 	fileServerEndpoint, err := normalizeFileServerEndpoint(o.fileServerEndpoint)
 	if err != nil {
 		return fmt.Errorf("invalid ui.file-server-endpoint: %w", err)
@@ -365,9 +372,6 @@ func Start(opts ...ServerOption) error {
 	api.HandleFunc("/users/{username}", DeleteUser).Methods("DELETE", "OPTIONS")
 	api.HandleFunc("/users/{username}/tokens", CreateUserToken).Methods("POST", "OPTIONS")
 	api.HandleFunc("/roles", GetRoles).Methods("GET", "OPTIONS")
-	api.HandleFunc("/signup", Signup).Methods("POST", "OPTIONS")
-	api.HandleFunc("/login", Login).Methods("GET", "POST", "OPTIONS")
-	api.HandleFunc("/logout", Logout).Methods("GET", "OPTIONS")
 	api.HandleFunc("/logs", GetLogs).Methods("GET", "OPTIONS")
 	api.HandleFunc("/ws", broker.ServeWS).Methods("GET")
 	api.HandleFunc("/console", CreateConsole).Methods("POST", "OPTIONS")
@@ -401,7 +405,25 @@ func Start(opts ...ServerOption) error {
 		api.Use(middleware.AllowCORS)
 	}
 
-	api.Use(middleware.Auth(o.jwtKey, o.proxyAuthHeader))
+	if o.authMode == "proxied" {
+		plog.Info(plog.TypeSecurity, "using proxied authentication")
+
+		proxiedAuth := newProxyAuth(o)
+
+		api.HandleFunc("/signup", proxiedAuth.Signup).Methods("POST", "OPTIONS")
+		api.HandleFunc("/login", proxiedAuth.Login).Methods("GET", "POST", "OPTIONS")
+		api.HandleFunc("/logout", proxiedAuth.Logout).Methods("GET", "OPTIONS")
+
+		api.Use(proxiedAuth.Middleware())
+	} else {
+		plog.Info(plog.TypeSecurity, "using legacy authentication")
+
+		api.HandleFunc("/signup", Signup).Methods("POST", "OPTIONS")
+		api.HandleFunc("/login", Login).Methods("GET", "POST", "OPTIONS")
+		api.HandleFunc("/logout", Logout).Methods("GET", "OPTIONS")
+
+		api.Use(middleware.Auth(o.jwtKey, o.proxyAuthHeader))
+	}
 
 	switch o.logMiddleware {
 	case "full":

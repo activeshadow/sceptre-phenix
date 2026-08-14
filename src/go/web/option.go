@@ -37,7 +37,10 @@ type serverOptions struct {
 	jwtKey      string
 	jwtLifetime time.Duration
 
-	proxyAuthHeader string
+	proxyAuthHeader   string
+	authMode          string
+	authTokenHeader   string
+	proxiedUserHeader string
 
 	features map[string]bool
 
@@ -46,11 +49,14 @@ type serverOptions struct {
 
 func newServerOptions(opts ...ServerOption) serverOptions {
 	so := serverOptions{ //nolint:exhaustruct // partial initialization
-		endpoint:    ":3000",
-		users:       []string{"admin@foo.com:foobar:Global Admin"},
-		basePath:    "/",
-		jwtLifetime: defaultJWTLifetime,
-		features:    make(map[string]bool),
+		endpoint:          ":3000",
+		users:             []string{"admin@foo.com:foobar:Global Admin"},
+		basePath:          "/",
+		jwtLifetime:       defaultJWTLifetime,
+		authMode:          "legacy",
+		authTokenHeader:   "X-Phenix-Auth-Token",
+		proxiedUserHeader: "X-Forwarded-User",
+		features:          make(map[string]bool),
 	}
 
 	for _, opt := range opts {
@@ -169,6 +175,28 @@ func ServeWithJWTLifetime(l time.Duration) ServerOption {
 func ServeWithProxyAuthHeader(h string) ServerOption {
 	return func(o *serverOptions) {
 		o.proxyAuthHeader = h
+	}
+}
+
+func ServeWithAuthMode(m string) ServerOption {
+	return func(o *serverOptions) {
+		o.authMode = m
+	}
+}
+
+func ServeWithAuthTokenHeader(h string) ServerOption {
+	return func(o *serverOptions) {
+		if h != "" {
+			o.authTokenHeader = h
+		}
+	}
+}
+
+func ServeWithProxiedUserHeader(h string) ServerOption {
+	return func(o *serverOptions) {
+		if h != "" {
+			o.proxiedUserHeader = h
+		}
 	}
 }
 

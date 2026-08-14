@@ -42,6 +42,9 @@ func newUICmd() *cobra.Command {
 				web.ServeMinimegaLogs(viper.GetString("ui.logs.minimega-path")),
 				web.ServeWithFeatures(viper.GetStringSlice("ui.features")),
 				web.ServeWithProxyAuthHeader(viper.GetString("ui.proxy-auth-header")),
+				web.ServeWithAuthMode(viper.GetString("ui.auth-mode")),
+				web.ServeWithAuthTokenHeader(viper.GetString("ui.auth-token-header")),
+				web.ServeWithProxiedUserHeader(viper.GetString("ui.proxied-user-header")),
 				web.ServeWithUnixSocketGID(viper.GetInt("unix-socket-gid")),
 			}
 
@@ -88,6 +91,9 @@ func newUICmd() *cobra.Command {
 	uiCmd.Flags().String("file-server-endpoint", "0", "port or host:port to serve experiment file uploads on; port-only binds 127.0.0.1")
 	uiCmd.Flags().
 		String("proxy-auth-header", "", "header containing username when using proxy authentication")
+	uiCmd.Flags().String("auth-mode", "legacy", "authentication mode (legacy, proxied)")
+	uiCmd.Flags().String("auth-token-header", "X-Phenix-Auth-Token", "header containing phenix JWT bearer tokens")
+	uiCmd.Flags().String("proxied-user-header", "X-Forwarded-User", "header containing username when using proxied authentication")
 	uiCmd.Flags().StringSlice("users", nil, "pipe-delimited list of initial users to add")
 	uiCmd.Flags().String("tls-key", "", "path to TLS key file")
 	uiCmd.Flags().String("tls-cert", "", "path to TLS cert file")
@@ -103,6 +109,9 @@ func newUICmd() *cobra.Command {
 	_ = viper.BindPFlag("ui.jwt-lifetime", uiCmd.Flags().Lookup("jwt-lifetime"))
 	_ = viper.BindPFlag("ui.file-server-endpoint", uiCmd.Flags().Lookup("file-server-endpoint"))
 	_ = viper.BindPFlag("ui.proxy-auth-header", uiCmd.Flags().Lookup("proxy-auth-header"))
+	_ = viper.BindPFlag("ui.auth-mode", uiCmd.Flags().Lookup("auth-mode"))
+	_ = viper.BindPFlag("ui.auth-token-header", uiCmd.Flags().Lookup("auth-token-header"))
+	_ = viper.BindPFlag("ui.proxied-user-header", uiCmd.Flags().Lookup("proxied-user-header"))
 	_ = viper.BindPFlag("ui.users", uiCmd.Flags().Lookup("users"))
 	_ = viper.BindPFlag("ui.tls-key", uiCmd.Flags().Lookup("tls-key"))
 	_ = viper.BindPFlag("ui.tls-cert", uiCmd.Flags().Lookup("tls-cert"))
@@ -117,6 +126,9 @@ func newUICmd() *cobra.Command {
 	_ = viper.BindEnv("ui.jwt-lifetime")
 	_ = viper.BindEnv("ui.file-server-endpoint")
 	_ = viper.BindEnv("ui.proxy-auth-header")
+	_ = viper.BindEnv("ui.auth-mode")
+	_ = viper.BindEnv("ui.auth-token-header")
+	_ = viper.BindEnv("ui.proxied-user-header")
 	_ = viper.BindEnv("ui.users")
 	_ = viper.BindEnv("ui.tls-key")
 	_ = viper.BindEnv("ui.tls-cert")
